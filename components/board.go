@@ -136,16 +136,12 @@ func (b *Board) Mistakes() int {
 }
 
 func (b *Board) CheckWin(clusterRow, clusterCol, cellRow, cellCol int) {
-	for clC := range len(b.clusters[clusterRow]) {
-		for ceC := range len(b.clusters[clusterRow][clC][cellRow]) {
-			if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == b.clusters[clusterRow][clC][cellRow][ceC].value {
+	for i := range len(b.clusters[clusterRow]) {
+		for j := range len(b.clusters[clusterRow][i][cellRow]) {
+			if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == b.clusters[clusterRow][i][cellRow][j].value {
 				return
 			}
-		}
-	}
-	for clR := range len(b.clusters) {
-		for ceR := range len(b.clusters[clR][clusterCol]) {
-			if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == b.clusters[clR][clusterCol][ceR][cellCol].value {
+			if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == b.clusters[i][clusterCol][j][cellCol].value {
 				return
 			}
 		}

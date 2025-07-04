@@ -1,7 +1,6 @@
 package attributes
 
 import (
-	"fmt"
 	"math/rand"
 )
 
@@ -108,7 +107,6 @@ func clustersClashInCol(initialValues [][][][]uint16, clusterSize, clusterRow, c
 func regenerateClashingClusters(initialValues *[][][][]uint16, boardSize, clusterSize int) {
 	for clusterRow := range boardSize {
 		for clusterCol := range boardSize {
-			fmt.Println(clusterRow, clusterCol)
 			generateCluster(&(*initialValues)[clusterRow][clusterCol], clusterSize)
 			for clustersClashInRow(*initialValues, clusterSize, clusterRow, clusterCol) || clustersClashInCol(*initialValues, clusterSize, clusterRow, clusterCol) {
 				generateCluster(&(*initialValues)[clusterRow][clusterCol], clusterSize)
@@ -117,22 +115,89 @@ func regenerateClashingClusters(initialValues *[][][][]uint16, boardSize, cluste
 	}
 }
 
-func GenerateBoard(boardSize, clusterSize int) (initialValues [][][][]uint16) {
-	initialValues = make([][][][]uint16, boardSize)
-
+func createEmptyCellsForPlayer(initialValues *[][][][]uint16, boardSize, clusterSize int) {
 	for clusterRow := range boardSize {
-		initialValues[clusterRow] = make([][][]uint16, boardSize)
-
 		for clusterCol := range boardSize {
-			initialValues[clusterRow][clusterCol] = make([][]uint16, clusterSize)
-
+			var indexes []uint16 = UniqueNumberSequence(clusterSize*clusterSize-clusterSize, clusterSize*clusterSize)
 			for cellRow := range clusterSize {
-				initialValues[clusterRow][clusterCol][cellRow] = make([]uint16, clusterSize)
+				for cellCol := range clusterSize {
+					for _, index := range indexes {
+						if uint16(cellRow*clusterSize+cellCol) == index-1 {
+							(*initialValues)[clusterRow][clusterCol][cellRow][cellCol] = 0
+						}
+					}
+				}
 			}
 		}
 	}
+}
 
-	regenerateClashingClusters(&initialValues, boardSize, clusterSize)
+func GenerateBoard(boardSize, clusterSize int) [][][][]uint16 {
+	initialValues := make([][][][]uint16, boardSize)
+	for i := range initialValues {
+		initialValues[i] = make([][][]uint16, boardSize)
+		for j := range initialValues[i] {
+			initialValues[i][j] = make([][]uint16, clusterSize)
+			for k := range initialValues[i][j] {
+				initialValues[i][j][k] = make([]uint16, clusterSize)
+			}
+		}
+	}
+	flatBoard := make([][]uint16, boardSize*clusterSize)
+	for i := range flatBoard {
+		flatBoard[i] = make([]uint16, boardSize*clusterSize)
+	}
+	solveSudoku(flatBoard)
+	for row := 0; row < boardSize*clusterSize; row++ {
+		for col := 0; col < boardSize*clusterSize; col++ {
+			clusterRow := row / clusterSize
+			clusterCol := col / clusterSize
+			cellRow := row % clusterSize
+			cellCol := col % clusterSize
+			initialValues[clusterRow][clusterCol][cellRow][cellCol] = flatBoard[row][col]
+		}
+	}
+
+	createEmptyCellsForPlayer(&initialValues, boardSize, clusterSize)
 
 	return initialValues
+}
+
+func solveSudoku(board [][]uint16) bool {
+	for row := 0; row < 9; row++ {
+		for col := 0; col < 9; col++ {
+			if board[row][col] == 0 {
+				nums := rand.Perm(9)
+				for _, n := range nums {
+					val := uint16(n + 1)
+					if isValid(board, row, col, val) {
+						board[row][col] = val
+						if solveSudoku(board) {
+							return true
+						}
+						board[row][col] = 0
+					}
+				}
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func isValid(board [][]uint16, row, col int, val uint16) bool {
+	for i := 0; i < 9; i++ {
+		if board[row][i] == val || board[i][col] == val {
+			return false
+		}
+	}
+	startRow, startCol := row-row%3, col-col%3
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			if board[startRow+i][startCol+j] == val {
+				return false
+			}
+		}
+	}
+	return true
 }
