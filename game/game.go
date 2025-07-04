@@ -87,6 +87,12 @@ func (s *Sudoku) Update() error {
 		os.Exit(0)
 	}
 
+	s.leaveButton.HighLight()
+
+	if s.leaveButton.Pressed() {
+		os.Exit(0)
+	}
+
 	if s.board.Won() {
 		return nil
 	}
@@ -98,11 +104,6 @@ func (s *Sudoku) Update() error {
 
 	s.numberSelector.Update()
 	s.board.Update(s.numberSelector.CurrentValue())
-	s.leaveButton.HighLight()
-
-	if s.leaveButton.Pressed() {
-		os.Exit(0)
-	}
 
 	return nil
 }
@@ -110,7 +111,7 @@ func (s *Sudoku) Update() error {
 func (s *Sudoku) DrawMistakes(surface *ebiten.Image) {
 	var strVal string = fmt.Sprintf("Chyby: %d", s.board.Mistakes())
 
-	var _, textHeight = text.Measure(strVal, s.fontFace, s.fontFace.Size+10)
+	var _, textHeight float64 = text.Measure(strVal, s.fontFace, s.fontFace.Size+10)
 
 	options := &text.DrawOptions{}
 	options.GeoM.Translate(s.board.BoardOffsetY(), float64(s.screenHeight)-textHeight-float64(s.cellSize)*2.3)
@@ -122,7 +123,7 @@ func (s *Sudoku) DrawMistakes(surface *ebiten.Image) {
 func (s *Sudoku) DrawTime(surface *ebiten.Image) {
 	var strVal string = fmt.Sprintf("Čas: %d:%d", s.secondsElapsed/60, s.secondsElapsed%60)
 
-	var _, textHeight = text.Measure(strVal, s.fontFace, s.fontFace.Size+10)
+	var _, textHeight float64 = text.Measure(strVal, s.fontFace, s.fontFace.Size+10)
 
 	options := &text.DrawOptions{}
 	options.GeoM.Translate(s.board.BoardOffsetY(), float64(s.screenHeight)-textHeight-float64(s.cellSize)*1.2)
@@ -138,11 +139,11 @@ func (s *Sudoku) DrawWin(surface *ebiten.Image) {
 
 	var strVal string = "Skvělá práce!"
 
-	var textWidth, textHeight = text.Measure(strVal, s.fontFace, s.fontFace.Size+10)
+	var textWidth, textHeight float64 = text.Measure(strVal, s.fontFace, s.fontFace.Size+10)
 
 	options := &text.DrawOptions{}
-	options.GeoM.Translate(float64(s.screenWidth/2)-textWidth/2, float64(s.screenHeight/2)-textHeight/2)
-	options.ColorScale.Scale(1, 1, 0, 1)
+	options.GeoM.Translate(float64(s.screenWidth/2)-textWidth/2, float64(s.screenHeight)-float64(s.cellSize)*3.3-s.board.BoardOffsetY()-textHeight)
+	options.ColorScale.Scale(0.2, 0.6, 0.45, 1)
 
 	text.Draw(surface, strVal, s.fontFace, options)
 }

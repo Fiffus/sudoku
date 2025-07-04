@@ -124,7 +124,6 @@ func (b *Board) badCells(input uint16) {
 					if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == input {
 						b.clusters[clusterRow][clusterCol][cellRow][cellCol].SetHighlight()
 					}
-					b.CheckWin(clusterRow, clusterCol, cellRow, cellCol)
 				}
 			}
 		}
@@ -135,17 +134,77 @@ func (b *Board) Mistakes() int {
 	return b.mistakes
 }
 
-func (b *Board) CheckWin(clusterRow, clusterCol, cellRow, cellCol int) {
-	for i := range len(b.clusters[clusterRow]) {
-		for j := range len(b.clusters[clusterRow][i][cellRow]) {
-			if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == b.clusters[clusterRow][i][cellRow][j].value {
-				return
+func (b *Board) checkRow(globalRow, clusterSize int) bool {
+	found := make(map[uint16]bool)
+
+	for clusterCol := 0; clusterCol < len(b.clusters); clusterCol++ {
+		rowInCluster := globalRow % clusterSize
+		clusterRow := globalRow / clusterSize
+
+		for col := 0; col < clusterSize; col++ {
+			val := b.clusters[clusterRow][clusterCol][rowInCluster][col].value
+			if val == 0 || found[val] {
+				return false
 			}
-			if b.clusters[clusterRow][clusterCol][cellRow][cellCol].value == b.clusters[i][clusterCol][j][cellCol].value {
+			found[val] = true
+		}
+	}
+	return true
+}
+
+func (b *Board) checkCol(globalCol, clusterSize int) bool {
+	found := make(map[uint16]bool)
+
+	for clusterRow := 0; clusterRow < len(b.clusters); clusterRow++ {
+		colInCluster := globalCol % clusterSize
+		clusterCol := globalCol / clusterSize
+
+		for row := 0; row < clusterSize; row++ {
+			val := b.clusters[clusterRow][clusterCol][row][colInCluster].value
+			if val == 0 || found[val] {
+				return false
+			}
+			found[val] = true
+		}
+	}
+	return true
+}
+
+func (b *Board) checkCluster(clusterRow, clusterCol, clusterSize int) bool {
+	found := make(map[uint16]bool)
+
+	for row := 0; row < clusterSize; row++ {
+		for col := 0; col < clusterSize; col++ {
+			val := b.clusters[clusterRow][clusterCol][row][col].value
+			if val == 0 || found[val] {
+				return false
+			}
+			found[val] = true
+		}
+	}
+	return true
+}
+
+func (b *Board) CheckWin() {
+	boardSize := len(b.clusters)
+	clusterSize := len(b.clusters[0][0])
+
+	for i := 0; i < boardSize*clusterSize; i++ {
+		if !b.checkRow(i, clusterSize) || !b.checkCol(i, clusterSize) {
+			b.won = false
+			return
+		}
+	}
+
+	for clusterRow := 0; clusterRow < boardSize; clusterRow++ {
+		for clusterCol := 0; clusterCol < boardSize; clusterCol++ {
+			if !b.checkCluster(clusterRow, clusterCol, clusterSize) {
+				b.won = false
 				return
 			}
 		}
 	}
+
 	b.won = true
 }
 
@@ -154,6 +213,10 @@ func (b *Board) Won() bool {
 }
 
 func (b *Board) Update(input uint16) {
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		b.mistakeCounted = false
+	}
+
 	b.badCells(input)
 
 	var mx, my int = ebiten.CursorPosition()
@@ -161,9 +224,7 @@ func (b *Board) Update(input uint16) {
 		return
 	}
 
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		b.mistakeCounted = false
-	}
+	b.CheckWin()
 
 	for clusterRow := range len(b.clusters) {
 		for clusterCol := range len(b.clusters[clusterRow]) {
