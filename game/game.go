@@ -25,29 +25,37 @@ type Sudoku struct {
 	secondsElapsed int
 	delay          int64
 	cellSize       int
+	boardSize      int
 
 	screenWidth, screenHeight int
 }
 
 func (s *Sudoku) Construct() {
+	// desktop
 	s.screenWidth, s.screenHeight = ebiten.Monitor().Size()
 
-	ebiten.SetWindowSize(s.screenWidth, s.screenHeight)
-	ebiten.SetWindowTitle("Sudoku")
-	// desktop
-	ebiten.SetFullscreen(true)
+	// mobile
+	if s.screenWidth <= 0 || s.screenHeight <= 0 {
+		s.screenWidth = 320
+		s.screenHeight = 600
+	} else {
+		ebiten.SetWindowTitle("Sudoku")
+		ebiten.SetFullscreen(true)
+	}
 
-	var boardSize int = 3
+	ebiten.SetWindowSize(s.screenWidth, s.screenHeight)
+
+	s.boardSize = 3
 	var clusterSize int = 3
 	if s.screenWidth < s.screenHeight {
 		if float32(s.screenWidth)/float32(s.screenHeight) < 0.65 {
-			s.cellSize = int(float32(s.screenWidth/(boardSize*clusterSize)) * 0.9)
+			s.cellSize = int(float32(s.screenWidth/(s.boardSize*clusterSize)) * 0.9)
 		} else {
-			s.cellSize = int(float32(s.screenWidth/(boardSize*clusterSize)) * 0.6)
+			s.cellSize = int(float32(s.screenWidth/(s.boardSize*clusterSize)) * 0.6)
 		}
 	}
 	if s.screenWidth >= s.screenHeight {
-		s.cellSize = int(float32(s.screenHeight/(boardSize*clusterSize)) * 0.64)
+		s.cellSize = int(float32(s.screenHeight/(s.boardSize*clusterSize)) * 0.64)
 	}
 
 	var err error
@@ -64,7 +72,7 @@ func (s *Sudoku) Construct() {
 	s.delay = time.Now().UnixMilli()
 
 	s.board = &components.Board{}
-	s.board.Construct(boardSize, clusterSize, s.screenWidth, s.screenHeight, s.cellSize)
+	s.board.Construct(s.boardSize, clusterSize, s.screenWidth, s.screenHeight, s.cellSize)
 
 	s.numberSelector = &components.NumberSelector{}
 	s.numberSelector.Construct(clusterSize, s.cellSize, s.screenWidth, s.screenHeight, s.board.BoardOffsetY())
@@ -80,32 +88,6 @@ func (s *Sudoku) Construct() {
 		},
 		"Vypnout",
 	)
-}
-
-func (s *Sudoku) Update() error {
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		os.Exit(0)
-	}
-
-	s.leaveButton.HighLight()
-
-	if s.leaveButton.Pressed() {
-		os.Exit(0)
-	}
-
-	if s.board.Won() {
-		return nil
-	}
-
-	if s.delay < time.Now().UnixMilli() {
-		s.delay = time.Now().UnixMilli() + time.Second.Milliseconds()
-		s.secondsElapsed++
-	}
-
-	s.numberSelector.Update()
-	s.board.Update(s.numberSelector.CurrentValue())
-
-	return nil
 }
 
 func (s *Sudoku) DrawMistakes(surface *ebiten.Image) {
@@ -148,6 +130,36 @@ func (s *Sudoku) DrawWin(surface *ebiten.Image) {
 	text.Draw(surface, strVal, s.fontFace, options)
 }
 
+func (s *Sudoku) Update() error {
+	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		os.Exit(0)
+	}
+
+	s.leaveButton.HighLight()
+
+	if s.leaveButton.Pressed() {
+		os.Exit(0)
+	}
+
+	if s.board.Won() {
+		return nil
+	}
+
+	if s.delay < time.Now().UnixMilli() {
+		s.delay = time.Now().UnixMilli() + time.Second.Milliseconds()
+		s.secondsElapsed++
+	}
+
+	if s.board.FinishedPlacing(s.numberSelector.CurrentValue()) {
+		s.numberSelector.UsedUp()
+	}
+
+	s.numberSelector.Update()
+	s.board.Update(s.numberSelector.CurrentValue())
+
+	return nil
+}
+
 func (s *Sudoku) Draw(screen *ebiten.Image) {
 	screen.Fill(color.White)
 
@@ -167,5 +179,5 @@ func (s *Sudoku) Run() {
 }
 
 func (s *Sudoku) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+	return s.screenWidth, s.screenHeight
 }

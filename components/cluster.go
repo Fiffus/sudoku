@@ -26,7 +26,7 @@ func (c *Cluster) Construct(clusterRow, clusterCol, cellSize int, boardPosition 
 	}
 }
 
-func (c *Cluster) TouchedCell() (cell *Cell, row, col int) {
+func (c *Cluster) TouchedCell(touches []ebiten.TouchID) (cell *Cell, row, col int) {
 	if !inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		return nil, 0, 0
 	}
@@ -40,6 +40,20 @@ func (c *Cluster) TouchedCell() (cell *Cell, row, col int) {
 			}
 		}
 	}
+	/*
+
+		if len(touches) < 1 {
+			return
+		}
+		tx, ty := ebiten.TouchPosition(touches[0])
+
+		for row := range len(*c) {
+			for col := range (*c)[row] {
+				if (*c)[row][col].rect.CollidePoint(attributes.Vector{X: float64(tx), Y: float64(ty)}) {
+					return &(*c)[row][col], row, col
+				}
+			}
+		}*/
 
 	return nil, 0, 0
 }

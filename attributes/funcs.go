@@ -115,21 +115,34 @@ func regenerateClashingClusters(initialValues *[][][][]uint16, boardSize, cluste
 	}
 }
 
-func createEmptyCellsForPlayer(initialValues *[][][][]uint16, boardSize, clusterSize int) {
+func CreateEmptyCellsForPlayer(initialValues [][][][]uint16, boardSize, clusterSize int) [][][][]uint16 {
+	var cpy [][][][]uint16 = make([][][][]uint16, len(initialValues))
+
 	for clusterRow := range boardSize {
+		cpy[clusterRow] = make([][][]uint16, len(initialValues[clusterRow]))
+		copy(cpy[clusterRow], initialValues[clusterRow])
+
 		for clusterCol := range boardSize {
-			var indexes []uint16 = UniqueNumberSequence(clusterSize*clusterSize-clusterSize, clusterSize*clusterSize)
+			cpy[clusterRow][clusterCol] = make([][]uint16, len(initialValues[clusterRow][clusterCol]))
+			copy(cpy[clusterRow][clusterCol], initialValues[clusterRow][clusterCol])
+
+			var indexes []uint16 = UniqueNumberSequence(clusterSize*clusterSize-clusterSize-rand.Intn(clusterSize), clusterSize*clusterSize)
+
 			for cellRow := range clusterSize {
+				cpy[clusterRow][clusterCol][cellRow] = make([]uint16, len(initialValues[clusterRow][clusterCol][cellRow]))
+				copy(cpy[clusterRow][clusterCol][cellRow], initialValues[clusterRow][clusterCol][cellRow])
+
 				for cellCol := range clusterSize {
 					for _, index := range indexes {
 						if uint16(cellRow*clusterSize+cellCol) == index-1 {
-							(*initialValues)[clusterRow][clusterCol][cellRow][cellCol] = 0
+							cpy[clusterRow][clusterCol][cellRow][cellCol] = 0
 						}
 					}
 				}
 			}
 		}
 	}
+	return cpy
 }
 
 func GenerateBoard(boardSize, clusterSize int) [][][][]uint16 {
@@ -157,8 +170,6 @@ func GenerateBoard(boardSize, clusterSize int) [][][][]uint16 {
 			initialValues[clusterRow][clusterCol][cellRow][cellCol] = flatBoard[row][col]
 		}
 	}
-
-	createEmptyCellsForPlayer(&initialValues, boardSize, clusterSize)
 
 	return initialValues
 }

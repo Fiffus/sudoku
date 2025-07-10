@@ -13,4 +13,5 @@ type Color struct {
 	Gray        color.RGBA
 	PurpleLight color.RGBA
 	PurpleDark  color.RGBA
+	Yellow      color.RGBA
 }

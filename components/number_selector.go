@@ -14,6 +14,8 @@ type NumberSelector struct {
 	selectedCell    *Cell
 	selectedCellRow int
 	selectedCellCol int
+
+	touchTracker TouchTracker
 }
 
 func (ns *NumberSelector) Construct(clusterSize, cellSize, screenWidth, screenHeight int, boardOffsetY float64) {
@@ -42,6 +44,7 @@ func (ns *NumberSelector) Construct(clusterSize, cellSize, screenWidth, screenHe
 	}
 
 	ns.numbers.Construct(0, 0, cellSize, ns.background.Position, values)
+	ns.touchTracker.Construct()
 }
 
 func (ns *NumberSelector) CurrentValue() uint16 {
@@ -51,21 +54,32 @@ func (ns *NumberSelector) CurrentValue() uint16 {
 	return ns.selectedCell.value
 }
 
-func (ns *NumberSelector) Update() {
-	var mx, my int = ebiten.CursorPosition()
-	if !ns.background.CollidePoint(attributes.Vector{X: float64(mx), Y: float64(my)}) {
-		return
+func (ns *NumberSelector) UsedUp() {
+	for i := 1; i < len(ns.numbers)*len(ns.numbers[0])+1; i++ {
+		if ns.CurrentValue() == uint16(i) {
+			ns.selectedCell.Lock()
+		}
 	}
+}
 
+func (ns *NumberSelector) Update() {
 	var prevCell *Cell = ns.selectedCell
-	cell, row, col := ns.numbers.TouchedCell()
+	var touches []ebiten.TouchID = ns.touchTracker.JustPressedTouchIDs()
+
+	cell, row, col := ns.numbers.TouchedCell(touches)
 
 	if cell == nil {
 		return
 	}
 
 	if prevCell != nil {
-		prevCell.SetNormal()
+		if !prevCell.IsLocked() {
+			prevCell.SetNormal()
+		}
+	}
+
+	if cell.IsLocked() {
+		return
 	}
 
 	ns.selectedCell = cell

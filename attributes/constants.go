@@ -14,6 +14,7 @@ var (
 		Gray:        color.RGBA{220, 220, 220, 255},
 		PurpleLight: color.RGBA{255, 40, 190, 255},
 		PurpleDark:  color.RGBA{200, 22, 157, 255},
+		Yellow:      color.RGBA{255, 255, 0, 255},
 	}
 	BACKGROUND_COLOR color.RGBA = color.RGBA{100, 30, 80, 255}
 )
