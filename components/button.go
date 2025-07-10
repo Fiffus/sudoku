@@ -12,10 +12,11 @@ import (
 )
 
 type Button struct {
-	rect     attributes.Rect
-	clr      attributes.Color
-	text     string
-	fontFace *text.GoTextFace
+	rect         attributes.Rect
+	clr          attributes.Color
+	text         string
+	fontFace     *text.GoTextFace
+	touchTracker TouchTracker
 }
 
 func (b *Button) Construct(position, size attributes.Vector, buttonText string) {
@@ -34,6 +35,8 @@ func (b *Button) Construct(position, size attributes.Vector, buttonText string) 
 		Size:   size.Y * 0.7,
 	}
 	b.clr = attributes.CELL_COLOR
+	b.touchTracker = TouchTracker{}
+	b.touchTracker.Construct()
 }
 
 func (b *Button) HighLight() {
@@ -46,6 +49,16 @@ func (b *Button) HighLight() {
 }
 
 func (b *Button) Pressed() bool {
+	touches := b.touchTracker.JustPressedTouchIDs()
+
+	if len(touches) > 0 {
+		tx, ty := ebiten.TouchPosition(touches[0])
+
+		if b.rect.CollidePoint(attributes.Vector{X: float64(tx), Y: float64(ty)}) {
+			return true
+		}
+	}
+
 	var x, y int = ebiten.CursorPosition()
 	if b.rect.CollidePoint(attributes.Vector{X: float64(x), Y: float64(y)}) {
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {

@@ -139,6 +139,12 @@ func (b *Board) FinishedPlacing(number uint16) bool {
 }
 
 func (b *Board) Update(input uint16) {
+	var touches []ebiten.TouchID = b.touchTracker.JustPressedTouchIDs()
+
+	if len(touches) > 0 {
+		b.mistakeCounted = false
+	}
+
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		b.mistakeCounted = false
 	}
@@ -147,7 +153,6 @@ func (b *Board) Update(input uint16) {
 
 	for clusterRow := range len(b.clusters) {
 		for clusterCol := range len(b.clusters[clusterRow]) {
-			var touches []ebiten.TouchID = b.touchTracker.JustPressedTouchIDs()
 
 			cell, cellRow, cellCol := b.clusters[clusterRow][clusterCol].TouchedCell(touches)
 
@@ -165,6 +170,10 @@ func (b *Board) Update(input uint16) {
 
 			if cell.value == input {
 				cell.value = 0
+				continue
+			}
+
+			if cell.value != 0 && cell.value != input {
 				continue
 			}
 

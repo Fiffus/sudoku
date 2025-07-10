@@ -18,7 +18,7 @@ type NumberSelector struct {
 	touchTracker TouchTracker
 }
 
-func (ns *NumberSelector) Construct(clusterSize, cellSize, screenWidth, screenHeight int, boardOffsetY float64) {
+func (ns *NumberSelector) Construct(clusterSize, cellSize, screenWidth, screenHeight int, mobileOffset, boardOffsetY float64) {
 	totalCellWidth := clusterSize * cellSize
 	totalGapWidth := clusterSize*attributes.DISTANCE_BETWEEN_CELLS_PX + attributes.DISTANCE_BETWEEN_CLUSTERS_PX + attributes.DISTANCE_BETWEEN_CELLS_PX + attributes.DISTANCE_BETWEEN_CLUSTERS_PX
 
@@ -30,7 +30,7 @@ func (ns *NumberSelector) Construct(clusterSize, cellSize, screenWidth, screenHe
 	}
 	ns.background.Position = attributes.Vector{
 		X: float64(screenWidth)/2 - ns.background.Size.X/2,
-		Y: float64(screenHeight) - ns.background.Size.Y - boardOffsetY,
+		Y: float64(screenHeight) - ns.background.Size.Y - boardOffsetY - mobileOffset,
 	}
 
 	var values [][]uint16 = make([][]uint16, clusterSize)
@@ -42,6 +42,8 @@ func (ns *NumberSelector) Construct(clusterSize, cellSize, screenWidth, screenHe
 			val++
 		}
 	}
+
+	ns.selectedCell = nil
 
 	ns.numbers.Construct(0, 0, cellSize, ns.background.Position, values)
 	ns.touchTracker.Construct()
@@ -57,12 +59,35 @@ func (ns *NumberSelector) CurrentValue() uint16 {
 func (ns *NumberSelector) UsedUp() {
 	for i := 1; i < len(ns.numbers)*len(ns.numbers[0])+1; i++ {
 		if ns.CurrentValue() == uint16(i) {
-			ns.selectedCell.Lock()
+			ns.selectedCell.MarkAsUsed()
+		}
+	}
+}
+
+func (ns *NumberSelector) NotUsedUp() {
+	for i := 1; i < len(ns.numbers)*len(ns.numbers[0])+1; i++ {
+		if ns.CurrentValue() == uint16(i) {
+			ns.selectedCell.MarkAsUnUsed()
 		}
 	}
 }
 
 func (ns *NumberSelector) Update() {
+	if ns.selectedCell != nil {
+		for row := range len(ns.numbers) {
+			for col := range len(ns.numbers[row]) {
+				if ns.numbers[row][col].PlayerUsedAll() {
+					continue
+				}
+				if ns.CurrentValue() == ns.numbers[row][col].value {
+					ns.numbers[row][col].SetHighlight()
+				} else {
+					ns.numbers[row][col].SetNormal()
+				}
+			}
+		}
+	}
+
 	var prevCell *Cell = ns.selectedCell
 	var touches []ebiten.TouchID = ns.touchTracker.JustPressedTouchIDs()
 
@@ -73,19 +98,14 @@ func (ns *NumberSelector) Update() {
 	}
 
 	if prevCell != nil {
-		if !prevCell.IsLocked() {
+		if !prevCell.PlayerUsedAll() {
 			prevCell.SetNormal()
 		}
-	}
-
-	if cell.IsLocked() {
-		return
 	}
 
 	ns.selectedCell = cell
 	ns.selectedCellRow = row
 	ns.selectedCellCol = col
-	ns.selectedCell.SetHighlight()
 }
 
 func (ns *NumberSelector) Draw(surface *ebiten.Image) {

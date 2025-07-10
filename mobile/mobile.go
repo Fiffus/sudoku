@@ -7,6 +7,7 @@ import (
 )
 
 // export PATH="$PATH:$HOME/go/bin"
+// ebitenmobile bind -target android -javapkg fiffus.dev.sudoku -o sudoku.aar .
 func init() {
 	var sudoku game.Sudoku = game.Sudoku{}
 	sudoku.Construct()

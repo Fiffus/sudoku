@@ -17,7 +17,7 @@ type Cell struct {
 
 	mutable   bool
 	badChoice bool
-	locked    bool
+	usedAll   bool
 
 	clr      attributes.Color
 	fontFace *text.GoTextFace
@@ -46,7 +46,7 @@ func (c *Cell) Construct(position attributes.Vector, cellSize int, initialValue 
 		Source: fontFace,
 		Size:   c.rect.Size.Y * 0.9,
 	}
-	c.locked = false
+	c.usedAll = false
 }
 
 func (c *Cell) SetBadChoice(isBad bool) {
@@ -73,16 +73,23 @@ func (c *Cell) SetHighlight() {
 	c.clr.Current = c.clr.PurpleDark
 }
 
-func (c *Cell) IsLocked() bool {
-	return c.locked
+func (c *Cell) PlayerUsedAll() bool {
+	return c.usedAll
 }
 
-func (c *Cell) Lock() {
+func (c *Cell) MarkAsUsed() {
 	if c == nil {
 		return
 	}
-	c.locked = true
+	c.usedAll = true
 	c.clr.Current = c.clr.Yellow
+}
+
+func (c *Cell) MarkAsUnUsed() {
+	if c == nil {
+		return
+	}
+	c.usedAll = false
 }
 
 func (c *Cell) Draw(surface *ebiten.Image) {
